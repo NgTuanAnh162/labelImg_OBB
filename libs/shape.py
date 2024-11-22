@@ -100,7 +100,6 @@ class Shape(object):
         if self.points:
             color = self.select_line_color if self.selected else self.line_color
             pen = QPen(color)
-            # Try using integer sizes for smoother drawing(?)
             pen.setWidth(max(1, int(round(2.0 / self.scale))))
             painter.setPen(pen)
 
@@ -108,61 +107,56 @@ class Shape(object):
             vrtx_path = QPainterPath()
             originPoint_path = QPainterPath()
 
-            line_path.moveTo(self.points[0])
-            # Uncommenting the following line will draw 2 paths
-            # for the 1st vertex, and make it non-filled, which
-            # may be desirable.
-            #self.drawVertex(vrtx_path, 0)
+            # Convert first point to QPointF to ensure float precision
+            start_point = QPointF(self.points[0])
+            line_path.moveTo(start_point)
 
             for i, p in enumerate(self.points):
-                line_path.lineTo(p)
+                point = QPointF(p)  # Convert to QPointF
+                line_path.lineTo(point)
                 self.drawVertex(vrtx_path, i)
-            self.drawOrigin(originPoint_path) # Draw object origin (centre)
             
             if self.isClosed():
-                line_path.lineTo(self.points[0])
+                line_path.lineTo(QPointF(self.points[0]))
 
+            # Draw origin point
+            self.drawOrigin(originPoint_path)
+
+            # Draw paths
             painter.drawPath(line_path)
             painter.drawPath(vrtx_path)
             painter.drawPath(originPoint_path)
             painter.fillPath(vrtx_path, self.vertex_fill_color)
             painter.fillPath(originPoint_path, self.origin_fill_color)
 
-            # Print debug info
-            min_x = sys.maxsize
-            min_y = sys.maxsize
-            for point in self.points:
-                min_x = min(min_x, point.x())
-                min_y = min(min_y, point.y())
-            if min_x != sys.maxsize and min_y != sys.maxsize:
-                font = QFont()
-                font.setPointSize(10)
-                font.setBold(True)
+            # Draw debug info
+            min_x = min(point.x() for point in self.points)
+            min_y = min(point.y() for point in self.points)
+            
+            if min_y < MIN_Y_LABEL:
+                min_y += MIN_Y_LABEL
+
+            # Set font for measurements
+            font = QFont()
+            font.setPointSize(10)
+            font.setBold(True)
+            painter.setFont(font)
+            
+            # Draw measurements text
+            text_point = QPoint(int(min_x), int(min_y))
+            measurement_text = "h={0:.1f}, w={1:.1f}, \u03F4={2:.1f}".format(
+                self.height, self.width, self.angle
+            )
+            painter.drawText(text_point, measurement_text)
+
+            # Draw label if needed
+            if self.paintLabel and self.label:
+                font.setPointSize(8)
                 painter.setFont(font)
-                if(self.label == None):
-                    self.label = ""
-                if(min_y < MIN_Y_LABEL):
-                    min_y += MIN_Y_LABEL
-                painter.drawText(min_x, min_y, "h={0:.1f}, w={1:.1f} , \u03F4={2:.1f}".format(self.height, self.width, self.angle))
+                label_point = QPoint(int(min_x), int(min_y + MIN_Y_LABEL))
+                painter.drawText(label_point, self.label)
 
-            # Draw text at the top-left
-            if self.paintLabel:
-                min_x = sys.maxsize
-                min_y = sys.maxsize
-                for point in self.points:
-                    min_x = min(min_x, point.x())
-                    min_y = min(min_y, point.y())
-                if min_x != sys.maxsize and min_y != sys.maxsize:
-                    font = QFont()
-                    font.setPointSize(8)
-                    font.setBold(True)
-                    painter.setFont(font)
-                    if(self.label == None):
-                        self.label = ""
-                    if(min_y < MIN_Y_LABEL):
-                        min_y += MIN_Y_LABEL
-                    painter.drawText(min_x, min_y, self.label)
-
+            # Fill shape if needed
             if self.fill:
                 color = self.select_fill_color if self.selected else self.fill_color
                 painter.fillPath(line_path, color)
@@ -170,24 +164,43 @@ class Shape(object):
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
         shape = self.point_type
-        point = self.points[i]
+        point = QPointF(self.points[i])  # Convert to QPointF
+        
         if i == self._highlightIndex:
             size, shape = self._highlightSettings[self._highlightMode]
             d *= size
+        
         if self._highlightIndex is not None:
             self.vertex_fill_color = self.hvertex_fill_color
         else:
             self.vertex_fill_color = Shape.vertex_fill_color
+            
         if shape == self.P_SQUARE:
             path.addRect(point.x() - d / 2, point.y() - d / 2, d, d)
         elif shape == self.P_ROUND:
-            path.addEllipse(point, d / 2.0, d / 2.0)
+            rect = QRectF(point.x() - d / 2, point.y() - d / 2, d, d)
+            path.addEllipse(rect)
         else:
             assert False, "unsupported vertex shape"
-            
+
     def drawOrigin(self, path):
+        """Draw the origin point (center) of the shape"""
+        if not self.origin:
+            return
+            
         d = self.point_size / self.scale
-        path.addEllipse(QPoint(self.origin[0], self.origin[1]), d / 2.0, d / 2.0)
+        center = QPointF(self.origin[0], self.origin[1])
+        
+        # Create a rectangle centered on the origin point
+        rect = QRectF(
+            center.x() - d / 2,  # left
+            center.y() - d / 2,  # top
+            d,                   # width
+            d                    # height
+        )
+        
+        # Add the ellipse to the path using the rectangle
+        path.addEllipse(rect)
 
     def nearestVertex(self, point, epsilon):
         for i, p in enumerate(self.points):
