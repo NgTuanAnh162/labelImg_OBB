@@ -860,7 +860,8 @@ class MainWindow(QMainWindow, WindowMixin):
                         width=s.width,
                         angle=s.angle,
                        # add chris
-                        difficult = s.difficult)
+                        difficult = s.difficult,
+                        corners = s.points) # Tuan Anh
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         # Can add differrent annotation formats here
@@ -876,7 +877,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.labelFile.saveYoloFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
             elif self.usingYoloOBBFormat is True:
-                shapes = [format_obb_shape(shape) for shape in self.canvas.shapes]
+                shapes = [format_obb_shape(shape) for shape in self.canvas.shapes]    # Tuan Anh
                 if annotationFilePath[-4:].lower() != ".txt":
                     annotationFilePath += TXT_EXT
                 self.labelFile.saveYoloOBBFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,

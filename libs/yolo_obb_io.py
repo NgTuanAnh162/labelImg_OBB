@@ -22,8 +22,16 @@ class YOLOOBBWriter:
         self.localImgPath = localImgPath
         self.verified = False
 
-    def addBndBox(self, centre_x, centre_y, height, width, angle, name, difficult):
-        bndbox = {'centre_x': centre_x, 'centre_y': centre_y, 'height': height, 'width': width, 'angle': angle}
+    # Original
+    # def addBndBox(self, centre_x, centre_y, height, width, angle, name, difficult):
+    #     bndbox = {'centre_x': centre_x, 'centre_y': centre_y, 'height': height, 'width': width, 'angle': angle}
+    #     bndbox['name'] = name
+    #     bndbox['difficult'] = difficult
+    #     self.boxlist.append(bndbox)
+    
+    # Tuan Anh
+    def addBndBox(self, corner_1, corner_2, corner_3, corner_4, name, difficult):
+        bndbox = {'corner_1': corner_1, 'corner_2': corner_2, 'corner_3': corner_3, 'corner_4': corner_4} # Tuan Anh
         bndbox['name'] = name
         bndbox['difficult'] = difficult
         self.boxlist.append(bndbox)
@@ -44,13 +52,23 @@ class YOLOOBBWriter:
             classesFile = os.path.join(os.path.dirname(os.path.abspath(targetFile)), "classes.txt")
             out_class_file = open(classesFile, 'w')
 
-        out_file.write("YOLO_OBB\n")
+        # out_file.write("YOLO_OBB\n")
         for box in self.boxlist:
             boxName = box['name']
             if boxName not in classList:
                 classList.append(boxName)
             classIndex = classList.index(boxName)
-            out_file.write("%d %.6f %.6f %.6f %.6f %.6f\n" % (classIndex, box['centre_x'], box['centre_y'], box['height'], box['width'], box['angle']))
+            # out_file.write("%d %.6f %.6f %.6f %.6f %.6f\n" % (classIndex, box['centre_x'], box['centre_y'], box['height'], box['width'], box['angle'])) # Original save format
+            # Tuan Anh
+            out_file.write(
+                "%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f\n" % (
+                    classIndex,
+                    box['corner_1'].x(), box['corner_1'].y(),
+                    box['corner_2'].x(), box['corner_2'].y(),
+                    box['corner_3'].x(), box['corner_3'].y(),
+                    box['corner_4'].x(), box['corner_4'].y()
+                )
+            )
 
         # print (classList)
         # print (out_class_file)
