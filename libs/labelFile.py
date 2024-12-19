@@ -110,7 +110,7 @@ class LabelFile(object):
             corners = shape['corners']
             
             #writer.addBndBox(centre_x_y[0], centre_x_y[1], height, width, angle, label, difficult) # Tuan Anh
-            writer.addBndBox(corners[0], corners[1], corners[2], corners[3], label, difficult) # Tuan Anh
+            writer.addBndBox(corners[0], corners[1], corners[2], corners[3], label, difficult, imageShape[0], imageShape[1]) # Tuan Anh
 
         writer.save(targetFile=filename, classList=classList)
         return

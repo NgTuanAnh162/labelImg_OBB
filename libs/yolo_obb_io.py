@@ -30,10 +30,12 @@ class YOLOOBBWriter:
     #     self.boxlist.append(bndbox)
     
     # Tuan Anh
-    def addBndBox(self, corner_1, corner_2, corner_3, corner_4, name, difficult):
+    def addBndBox(self, corner_1, corner_2, corner_3, corner_4, name, difficult, imageHeight, imageWidth):
         bndbox = {'corner_1': corner_1, 'corner_2': corner_2, 'corner_3': corner_3, 'corner_4': corner_4} # Tuan Anh
         bndbox['name'] = name
         bndbox['difficult'] = difficult
+        bndbox['imageHeight'] = imageHeight
+        bndbox['imageWidth'] = imageWidth
         self.boxlist.append(bndbox)
 
     def save(self, classList=[], targetFile=None):
@@ -54,19 +56,24 @@ class YOLOOBBWriter:
 
         # out_file.write("YOLO_OBB\n")
         for box in self.boxlist:
+            # Tuan Anh
+            imageHeight = box['imageHeight']
+            imageWidth = box['imageWidth']
+            #
             boxName = box['name']
             if boxName not in classList:
                 classList.append(boxName)
             classIndex = classList.index(boxName)
             # out_file.write("%d %.6f %.6f %.6f %.6f %.6f\n" % (classIndex, box['centre_x'], box['centre_y'], box['height'], box['width'], box['angle'])) # Original save format
             # Tuan Anh
+            # Output are Yolo coordinates format
             out_file.write(
                 "%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f\n" % (
                     classIndex,
-                    box['corner_1'].x(), box['corner_1'].y(),
-                    box['corner_2'].x(), box['corner_2'].y(),
-                    box['corner_3'].x(), box['corner_3'].y(),
-                    box['corner_4'].x(), box['corner_4'].y()
+                    box['corner_1'].x() / imageWidth, box['corner_1'].y() / imageHeight,
+                    box['corner_2'].x() / imageWidth, box['corner_2'].y() / imageHeight,
+                    box['corner_3'].x() / imageWidth, box['corner_3'].y() / imageHeight,
+                    box['corner_4'].x() / imageWidth, box['corner_4'].y() / imageHeight
                 )
             )
 
