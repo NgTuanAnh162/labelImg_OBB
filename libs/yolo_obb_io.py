@@ -30,17 +30,30 @@ class YOLOOBBWriter:
     #     self.boxlist.append(bndbox)
     
     # Tuan Anh
-    def addBndBox(self, corner_1, corner_2, corner_3, corner_4, name, difficult, imageHeight, imageWidth):
-        bndbox = {'corner_1': corner_1, 'corner_2': corner_2, 'corner_3': corner_3, 'corner_4': corner_4} # Tuan Anh
+    def addBndBox(self, corner_1, corner_2, corner_3, corner_4, imageHeight, imageWidth, centre_x, centre_y, height, width, angle, name, difficult):
+        bndbox = {'corner_1': corner_1, 'corner_2': corner_2, 'corner_3': corner_3, 'corner_4': corner_4}
+        bndbox.update({
+            'centre_x': centre_x,
+            'centre_y': centre_y,
+            'height': height,
+            'width': width,
+            'angle': angle,
+            'name': name,
+            'difficult': difficult,
+            'imageHeight': imageHeight,
+            'imageWidth': imageWidth
+            })
         bndbox['name'] = name
         bndbox['difficult'] = difficult
         bndbox['imageHeight'] = imageHeight
         bndbox['imageWidth'] = imageWidth
         self.boxlist.append(bndbox)
 
+
     def save(self, classList=[], targetFile=None):
 
-        out_file = None #Update yolo .txt
+        out_file = None # Display annotation file
+        annotation_file = None # Annotation file
         out_class_file = None   #Update class list .txt
 
         if targetFile is None:
@@ -49,12 +62,21 @@ class YOLOOBBWriter:
             classesFile = os.path.join(os.path.dirname(os.path.abspath(self.filename)), "classes.txt")
             out_class_file = open(classesFile, 'w')
 
+            annotation_folder = os.path.join(os.path.dirname(os.path.abspath(self.filename)), "annotation")
+            os.makedirs(annotation_folder, exist_ok=True)
+            annotationFilePath = os.path.join(annotation_folder, os.path.basename(self.filename) + ".txt")
+            annotation_file = open(annotationFilePath, 'w', encoding=ENCODE_METHOD)
+
         else:
             out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
             classesFile = os.path.join(os.path.dirname(os.path.abspath(targetFile)), "classes.txt")
             out_class_file = open(classesFile, 'w')
 
-        # out_file.write("YOLO_OBB\n")
+            annotation_folder = os.path.join(os.path.dirname(os.path.abspath(targetFile)), "annotation")
+            os.makedirs(annotation_folder, exist_ok=True)
+            annotationFilePath = os.path.join(annotation_folder, os.path.basename(targetFile))
+            annotation_file = open(annotationFilePath, 'w', encoding=ENCODE_METHOD)
+        out_file.write("YOLO_OBB\n")
         for box in self.boxlist:
             # Tuan Anh
             imageHeight = box['imageHeight']
@@ -64,10 +86,12 @@ class YOLOOBBWriter:
             if boxName not in classList:
                 classList.append(boxName)
             classIndex = classList.index(boxName)
-            # out_file.write("%d %.6f %.6f %.6f %.6f %.6f\n" % (classIndex, box['centre_x'], box['centre_y'], box['height'], box['width'], box['angle'])) # Original save format
+            # Display annotation file saving
+            out_file.write("%d %.6f %.6f %.6f %.6f %.6f\n" % (classIndex, box['centre_x'], box['centre_y'], box['height'], box['width'], box['angle'])) # Original save format
+            
             # Tuan Anh
-            # Output are Yolo coordinates format
-            out_file.write(
+            # Annotation Yolo format file
+            annotation_file.write(
                 "%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f\n" % (
                     classIndex,
                     box['corner_1'].x() / imageWidth, box['corner_1'].y() / imageHeight,
@@ -84,6 +108,7 @@ class YOLOOBBWriter:
 
         out_class_file.close()
         out_file.close()
+        annotation_file.close()
 
 
 
